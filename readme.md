@@ -18,3 +18,6 @@ Directory layout:
 ```
 
 Just - have Fun ```=;)```
+
+**P.S.**: I forgot to mention... This script has been created and tested (only) in a Linux environment. If you encounter any kind of trouble (I believe you will), feel free to open a ticket here.
+If you also have the solution to fix it - and / or would like to contribute in any other way - You are welcome ```=;)```

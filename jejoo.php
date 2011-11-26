@@ -70,15 +70,15 @@ class JeJoo extends JCli
 
 		if( ! file_exists($cfg))
 		throw new Exception('The expected xml elements file has not been found in: '.$cfg);
-		
+
 		if( ! $this->config->get('outputPath'))
 		throw new Exception('Please specify an output path in your config.php');
 
 		$this->xml = JFactory::getXML($cfg);
-		
+
 		$this->clean();
 
-		$this->output('Processing the base repo...', false, 'green');
+		$this->output('Processing the base repo...', false, 'purple');
 
 		if( ! $this->checkRepo())
 		{
@@ -91,41 +91,9 @@ class JeJoo extends JCli
 
 		$this->output('OK', true, 'green');
 
-		$this->output('Processing removals...');
+		$this->processFiles();
 
-		foreach($this->xml->removes->file as $file)
-		{
-			$this->output((string)$file);
-			JFile::delete(JPATH_BASE.'/stripped/'.$file);
-		}
-
-		$this->output('Processing packages...');
-
-		foreach($this->xml->packages->package as $package)
-		{
-			$this->output((string)$package->name, true, 'yellow');
-
-			JFolder::create(JPATH_BASE.'/extract/'.$package->name);
-
-			foreach($package->item as $item)
-			{
-				$this->output((string)$item);
-					
-				if(is_dir(JPATH_BASE.'/stripped/'.$item))
-				{
-					JFolder::create(JPATH_BASE.'/extract/'.$package->name.'/'.$item);
-				}
-				else
-				{
-					JFolder::create(dirname(JPATH_BASE.'/extract/'.$package->name.'/'.$item));
-				}
-
-				rename(JPATH_BASE.'/stripped/'.$item, JPATH_BASE.'/extract/'.$package->name.'/'.$item);
-			}//foreach
-
-		}//foreach
-
-		$this->output('Processing queries...');
+		$this->output('Processing queries...', true, 'purple');
 
 		$this->processQueries();
 
@@ -238,6 +206,67 @@ class JeJoo extends JCli
 	}//function
 
 	/**
+	 * Copy and or remove files and folders.
+	 *
+	 * @return boolean
+	 */
+	private function processFiles()
+	{
+		$this->output('Processing removals...', true, 'purple');
+
+		foreach($this->xml->removes->file as $file)
+		{
+			$this->output((string)$file.'...', false);
+
+			if(JFile::delete(JPATH_BASE.'/stripped/'.$file))
+			{
+				$this->output('ok', true, 'green');
+
+			}
+			else
+			{
+				$this->output('FAILED', true, 'red');
+			}
+		}//foreach
+
+		$this->output('Processing packages...', true, 'purple');
+
+		foreach($this->xml->packages->package as $p)
+		{
+			$package = $p->attributes()->name;
+				
+			$this->output($package.'...', true, 'cyan');
+
+			JFolder::create(JPATH_BASE.'/extract/'.$package);
+
+			foreach($p->item as $item)
+			{
+				$this->output((string)$item.'...', false);
+					
+				if(is_dir(JPATH_BASE.'/stripped/'.$item))
+				{
+					JFolder::create(JPATH_BASE.'/extract/'.$package.'/'.$item);
+				}
+				else
+				{
+					JFolder::create(dirname(JPATH_BASE.'/extract/'.$package.'/'.$item));
+				}
+
+				if(rename(JPATH_BASE.'/stripped/'.$item, JPATH_BASE.'/extract/'.$package.'/'.$item))
+				{
+					$this->output('ok', true, 'green');
+				}
+				else
+				{
+					$this->output('FAILED', true, 'red');
+				}
+			}//foreach
+		}//foreach
+
+		return true;
+	}//function
+
+	/**
 	 * Method to process the standard Joomla! install sql file according to
 	 * specifiactions given in a xml file.
 	 *
@@ -259,8 +288,8 @@ class JeJoo extends JCli
 
 		foreach($this->xml->packages->package as $p)
 		{
-			$package = (string)$p->name;
-			$this->output((string)$package, true, 'yellow');
+			$package = (string)$p->attributes()->name;
+			$this->output((string)$package, true, 'cyan');
 
 			if( ! isset($stripResult[$package])) $stripResult[$package] = array();
 
@@ -270,7 +299,7 @@ class JeJoo extends JCli
 				$table = (string)$query;
 				$item = (string)$query->attributes()->item;
 
-				$this->output("...$command - $table...");
+				$this->output($command.' - '.$table.'...', false);
 
 				foreach($origQueries as $qNum => $query)
 				{
@@ -345,16 +374,25 @@ class JeJoo extends JCli
 							break;
 					}//switch
 				}//foreach
+				
+				$this->output('ok', true, 'green');
 			}//foreach
 		}//foreach
 
 		// 		DProfiler::markFinished();
 
-		$this->output('Writing sql files...');
+		$this->output('Writing sql files...', true, 'purple');
 
 		foreach($stripResult as $package => $queries)
 		{
-			$this->output('...'.$package.'...');
+			$this->output($package.'...', false);
+			
+			if( ! $queries)
+			{
+				$this->output('no queries', true, 'yellow');
+				
+				continue;
+			}
 
 			$fName = JPATH_BASE.'/extract/'.$package.'/install.sql';
 			$handle = fopen($fName, 'w');
@@ -363,15 +401,21 @@ class JeJoo extends JCli
 			throw new Exception('Can not open '.$fName);
 
 			fwrite($handle, implode("\n\n", $queries));
+			
+			$this->output('ok', true, 'green');
 		}//foreach
 
 		// 		DProfiler::markFinished();
+		
+		$this->output('ok', true, 'green');
 
-		$this->output('Writing modified Joomla! sql file...');
+		$this->output('Writing modified Joomla! sql file...', false, 'purple');
 
 		$handle = fopen(JPATH_BASE.'/stripped/installation/sql/mysql/joomla.sql', 'w');
 
 		fwrite($handle, implode("\n\n", $origQueries));
+		
+		$this->output('ok', true, 'green');
 
 		// 		DProfiler::markFinished();
 

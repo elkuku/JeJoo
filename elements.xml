@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<packagelist>
+  <packages group="joomla">
+
+    <package name="authentication_gmail">
+      <item>plugins/authentication/gmail</item>
+      <item>administrator/language/en-GB/en-GB.plg_authentication_gmail.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_authentication_gmail.sys.ini</item>
+      <query type="insert" item="plg_authentication_gmail">extensions</query>
+    </package>
+
+    <package name="authentication_ldap">
+      <item>plugins/authentication/ldap</item>
+      <item>administrator/language/en-GB/en-GB.plg_authentication_ldap.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_authentication_ldap.sys.ini</item>
+      <query type="insert" item="plg_authentication_ldap">extensions</query>
+    </package>
+
+    <package name="banners">
+      <item>administrator/components/com_banners</item>
+      <item>components/com_banners</item>
+      <item>modules/mod_banners</item>
+      <item>administrator/language/en-GB/en-GB.com_banners.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_banners.sys.ini</item>
+      <item>language/en-GB/en-GB.mod_banners.ini</item>
+      <item>language/en-GB/en-GB.mod_banners.sys.ini</item>
+      <query type="create">banners</query>
+      <query type="create">banner_clients</query>
+      <query type="create">banner_tracks</query>
+      <query type="insert" item="com_banners">assets</query>
+      <query type="insert" item="com_banners">categories</query>
+      <query type="insert" item="com_banners">extensions</query>
+      <query type="insert" item="com_banners">menu</query>
+      <query type="insert" item="mod_banners">extensions</query>
+      <query type="insert" item="mod_banners">modules</query>
+    </package>
+
+    <package name="contact">
+      <item>administrator/components/com_contact</item>
+      <item>components/com_contact</item>
+      <item>plugins/search/contacts</item>
+      <item>media/contacts</item>
+      <item>administrator/language/en-GB/en-GB.com_contact.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_contact.sys.ini</item>
+      <item>language/en-GB/en-GB.com_contact.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_contacts.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_contacts.sys.ini</item>
+      <query type="create">contact_details</query>
+      <query type="insert" item="com_contact">assets</query>
+      <query type="insert" item="com_contact">categories</query>
+      <query type="insert" item="com_contact">extensions</query>
+      <query type="insert" item="plg_search_contacts">extensions</query>
+      <query type="insert" item="com_contact">menu</query>
+    </package>
+
+    <package name="editors_codemirror">
+      <item>plugins/editors/codemirror</item>
+      <item>media/editors/codemirror</item>
+      <item>administrator/language/en-GB/en-GB.plg_editors_codemirror.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_editors_codemirror.sys.ini</item>
+      <query type="insert" item="plg_editors_codemirror">extensions</query>
+    </package>
+
+    <package name="editors_tinymce">
+      <item>media/editors/tinymce</item>
+      <item>plugins/editors/tinymce</item>
+      <item>administrator/language/en-GB/en-GB.plg_editors_tinymce.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_editors_tinymce.sys.ini</item>
+      <query type="insert" item="plg_editors_tinymce">extensions</query>
+    </package>
+
+    <package name="geshi">
+      <item>plugins/content/geshi</item>
+      <item>administrator/language/en-GB/en-GB.plg_content_geshi.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_content_geshi.sys.ini</item>
+      <query type="insert" item="plg_content_geshi">extensions</query>
+    </package>
+
+    <package name="images">
+      <item>images/banners</item>
+      <item>images/sampledata</item>
+    </package>
+
+    <package name="joomla_tests">
+      <item>tests</item>
+    </package>
+
+    <package name="joomla_documentation">
+      <item>administrator/help/en-GB</item>
+    </package>
+
+    <package name="messages">
+      <item>administrator/components/com_messages</item>
+      <item>components/com_mailto</item>
+      <item>media/mailto</item>
+      <item>administrator/language/en-GB/en-GB.com_mailto.sys.ini</item>
+      <item>language/en-GB/en-GB.com_mailto.ini</item>
+      <item>language/en-GB/en-GB.com_messages.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_messages.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_messages.sys.ini</item>
+      <query type="create">messages</query>
+      <query type="create">messages_cfg</query>
+      <query type="insert" item="com_messages">assets</query>
+      <query type="insert" item="com_messages">extensions</query>
+      <query type="insert" item="com_messages">menu</query>
+      <query type="insert" item="mod_unread">modules</query>
+      <query type="insert" item="mod_unread">extensions</query>
+    </package>
+
+    <package name="modules_random_image">
+      <item>modules/mod_random_image</item>
+      <item>language/en-GB/en-GB.mod_random_image.ini</item>
+      <item>language/en-GB/en-GB.mod_random_image.sys.ini</item>
+      <query type="insert" item="mod_random_image">extensions</query>
+    </package>
+
+    <package name="modules_stats">
+      <item>modules/mod_stats</item>
+      <item>language/en-GB/en-GB.mod_stats.ini</item>
+      <item>language/en-GB/en-GB.mod_stats.sys.ini</item>
+      <query type="insert" item="mod_stats">extensions</query>
+    </package>
+
+    <package name="modules_users_latest">
+      <item>modules/mod_users_latest</item>
+      <item>language/en-GB/en-GB.mod_users_latest.ini</item>
+      <item>language/en-GB/en-GB.mod_users_latest.sys.ini</item>
+      <query type="insert" item="mod_users_latest">extensions</query>
+    </package>
+
+    <package name="modules_whosonline">
+      <item>modules/mod_whosonline</item>
+      <item>language/en-GB/en-GB.mod_whosonline.ini</item>
+      <item>language/en-GB/en-GB.mod_whosonline.sys.ini</item>
+      <query type="insert" item="mod_whosonline">extensions</query>
+    </package>
+
+    <package name="module_admin_status">
+      <item>administrator/modules/mod_status</item>
+      <item>administrator/language/en-GB/en-GB.mod_status.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_status.sys.ini</item>
+      <query type="insert" item="mod_status">extensions</query>
+      <query type="insert" item="mod_status">modules</query>
+    </package>
+
+    <package name="module_admin_quickicons">
+      <item>administrator/modules/mod_quickicon</item>
+      <item>administrator/language/en-GB/en-GB.mod_quickicon.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_quickicon.sys.ini</item>
+      <query type="insert" item="mod_quickicon">extensions</query>
+      <query type="insert" item="mod_quickicon">modules</query>
+    </package>
+
+    <package name="module_admin_logged_in_users">
+      <item>administrator/modules/mod_logged</item>
+      <item>administrator/language/en-GB/en-GB.mod_logged.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_logged.sys.ini</item>
+      <query type="insert" item="mod_logged">extensions</query>
+      <query type="insert" item="mod_logged">modules</query>
+    </package>
+
+    <package name="module_admin_latest_articles">
+      <item>administrator/modules/mod_latest</item>
+      <item>administrator/language/en-GB/en-GB.mod_latest.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_latest.sys.ini</item>
+      <query type="insert" item="mod_latest">extensions</query>
+      <query type="insert" item="mod_latest">modules</query>
+    </package>
+
+    <package name="module_admin_popular_articles">
+      <item>administrator/modules/mod_popular</item>
+      <item>administrator/language/en-GB/en-GB.mod_popular.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_popular.sys.ini</item>
+      <query type="insert" item="mod_popular">extensions</query>
+      <query type="insert" item="mod_popular">modules</query>
+    </package>
+
+    <package name="newsfeeds">
+      <item>administrator/components/com_newsfeeds</item>
+      <item>administrator/modules/mod_feed</item>
+      <item>modules/mod_feed</item>
+      <item>components/com_newsfeeds</item>
+      <item>plugins/search/newsfeeds</item>
+      <item>administrator/language/en-GB/en-GB.com_newsfeeds.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_newsfeeds.sys.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_feed.ini</item>
+      <item>administrator/language/en-GB/en-GB.mod_feed.sys.ini</item>
+      <item>language/en-GB/en-GB.com_newsfeeds.ini</item>
+      <item>language/en-GB/en-GB.mod_feed.ini</item>
+      <item>language/en-GB/en-GB.mod_feed.sys.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_newsfeeds.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_newsfeeds.sys.ini</item>
+      <query type="create">newsfeeds</query>
+      <query type="insert" item="com_newsfeeds">assets</query>
+      <query type="insert" item="com_newsfeeds">categories</query>
+      <query type="insert" item="com_newsfeeds">extensions</query>
+      <query type="insert" item="plg_search_newsfeeds">extensions</query>
+      <query type="insert" item="com_newsfeeds">menu</query>
+    </package>
+
+    <package name="redirect">
+      <item>administrator/components/com_redirect</item>
+      <item>plugins/system/redirect</item>
+      <item>administrator/language/en-GB/en-GB.com_redirect.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_redirect.sys.ini</item>
+      <query type="create">redirect_links</query>
+      <query type="insert" item="com_redirect">assets</query>
+      <query type="insert" item="com_redirect">extensions</query>
+      <query type="insert" item="plg_system_redirect">extensions</query>
+      <query type="insert" item="com_redirect">menu</query>
+    </package>
+
+    <package name="search">
+      <item>administrator/components/com_search</item>
+      <item>components/com_search</item>
+      <item>modules/mod_search</item>
+      <item>administrator/language/en-GB/en-GB.com_search.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_search.sys.ini</item>
+      <item>language/en-GB/en-GB.com_search.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_categories.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_categories.sys.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_content.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_content.sys.ini</item>
+      <query type="insert" item="com_search">assets</query>
+      <query type="insert" item="com_search">extensions</query>
+      <query type="insert" item="com_search">menu</query>
+    </package>
+
+    <package name="templates_admin_hathor">
+      <item>administrator/templates/hathor</item>
+      <item>administrator/language/en-GB/en-GB.tpl_hathor.ini</item>
+      <item>administrator/language/en-GB/en-GB.tpl_hathor.sys.ini</item>
+      <query type="insert" item="hathor">extensions</query>
+      <query type="insert" item="hathor">template_styles</query>
+    </package>
+
+    <package name="templates_atomic">
+      <item>templates/atomic</item>
+      <item>language/en-GB/en-GB.tpl_atomic.ini</item>
+      <item>language/en-GB/en-GB.tpl_atomic.sys.ini</item>
+      <query type="insert" item="atomic">extensions</query>
+      <query type="insert" item="atomic">template_styles</query>
+    </package>
+
+    <package name="templates_beez5">
+      <item>templates/beez5</item>
+      <item>language/en-GB/en-GB.tpl_beez5.ini</item>
+      <item>language/en-GB/en-GB.tpl_beez5.sys.ini</item>
+      <query type="insert" item="beez5">extensions</query>
+      <query type="insert" item="beez5">template_styles</query>
+    </package>
+
+    <package name="vote">
+      <item>plugins/content/vote</item>
+      <item>administrator/language/en-GB/en-GB.plg_content_vote.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_content_vote.sys.ini</item>
+      <query type="insert" item="plg_content_vote">extensions</query>
+    </package>
+
+    <package name="weblinks">
+      <item>administrator/components/com_weblinks</item>
+      <item>components/com_weblinks</item>
+      <item>modules/mod_weblinks</item>
+      <item>plugins/search/weblinks</item>
+      <item>administrator/language/en-GB/en-GB.com_weblinks.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_weblinks.sys.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_weblinks.sys.ini</item>
+      <item>language/en-GB/en-GB.com_weblinks.ini</item>
+      <item>language/en-GB/en-GB.mod_weblinks.ini</item>
+      <item>language/en-GB/en-GB.mod_weblinks.sys.ini</item>
+      <item>administrator/language/en-GB/en-GB.plg_search_weblinks.ini</item>
+      <query type="create">weblinks</query>
+      <query type="insert" item="com_weblinks">assets</query>
+      <query type="insert" item="com_weblinks">categories</query>
+      <query type="insert" item="com_weblinks">extensions</query>
+      <query type="insert" item="mod_weblinks">extensions</query>
+      <query type="insert" item="plg_search_weblinks">extensions</query>
+      <query type="insert" item="com_weblinks">menu</query>
+    </package>
+
+    <package name="wrapper">
+      <item>components/com_wrapper</item>
+      <item>modules/mod_wrapper</item>
+      <item>administrator/language/en-GB/en-GB.com_wrapper.ini</item>
+      <item>administrator/language/en-GB/en-GB.com_wrapper.sys.ini</item>
+      <item>language/en-GB/en-GB.com_wrapper.ini</item>
+      <item>language/en-GB/en-GB.mod_wrapper.ini</item>
+      <item>language/en-GB/en-GB.mod_wrapper.sys.ini</item>
+      <query type="insert" item="com_wrapper">assets</query>
+      <query type="insert" item="com_wrapper">extensions</query>
+      <query type="insert" item="mod_wrapper">extensions</query>
+    </package>
+  </packages>
+
+  <removes>
+    <file>README.txt</file>
+    <file>administrator/language/en-GB/en-GB.com_cpanel.ini</file>
+    <file>administrator/language/en-GB/en-GB.com_cpanel.sys.ini</file>
+  </removes>
+
+</packagelist>

@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 /**
- * JeJoo - Just enugh Joomla!
+ * JeJoo - Just enough Joomla!
  *
  * @author Nikolai Plath - elkuku - 11/2011
  * @author - You ?
@@ -16,7 +16,7 @@
 //-- watch out =;)
 error_reporting(-1);
 
-//-- got xampp and probs setting the include path ?..
+//-- got xampp and probs setting the include path ? eclipse ?..
 set_include_path(get_include_path().PATH_SEPARATOR.'/opt/lampp/lib/php');
 
 //-- KuKu's ConsoleColor - see: http://elkuku.github.com/pear/
@@ -35,7 +35,8 @@ define('_JEXEC', 1);
 require_once $_SERVER['JOOMLA_PLATFORM_PATH'].'/libraries/import.php';
 
 define('JPATH_BASE', dirname(__FILE__));
-define('JPATH_SITE', JPATH_BASE);
+
+define('JPATH_SITE', JPATH_BASE);//coupled
 
 jimport('joomla.application.cli');
 jimport('joomla.filesystem.folder');
@@ -48,8 +49,6 @@ jimport('joomla.filesystem.file');
  */
 class JeJoo extends JCli
 {
-	private $verbose = true;
-
 	private $xml = null;
 
 	/**
@@ -59,19 +58,24 @@ class JeJoo extends JCli
 	 */
 	public function execute()
 	{
-		$this->output('-------------------------------', true, 'green');
-		$this->output('-- JeJoo - JustEnoughJoomla! --', true, 'green');
-		$this->output('--  Joomla! Distro Builder   --', true, 'green');
-		$this->output('-------------------------------', true, 'green');
+		$this->config->verbose =($this->input->get('-q')) ? false : true;
+
+		$this->output('-------------------------------');
+		$this->output('-- JeJoo - JustEnoughJoomla! --');
+		$this->output('--  Joomla! Distro Builder   --');
+		$this->output('-------------------------------');
 		$this->output(Console_Color::convert('%n'));
 
 		$cfg = JPATH_BASE.'/elements.xml';
 
 		if( ! file_exists($cfg))
 		throw new Exception('The expected xml elements file has not been found in: '.$cfg);
+		
+		if( ! $this->config->get('outputPath'))
+		throw new Exception('Please specify an output path in your config.php');
 
 		$this->xml = JFactory::getXML($cfg);
-
+		
 		$this->clean();
 
 		$this->output('Processing the base repo...', false, 'green');
@@ -85,9 +89,9 @@ class JeJoo extends JCli
 			return;
 		}
 
-		$this->output('OK');
+		$this->output('OK', true, 'green');
 
-		$this->output('Processing removals...', true, 'green');
+		$this->output('Processing removals...');
 
 		foreach($this->xml->removes->file as $file)
 		{
@@ -95,7 +99,7 @@ class JeJoo extends JCli
 			JFile::delete(JPATH_BASE.'/stripped/'.$file);
 		}
 
-		$this->output('Processing packages...', true, 'green');
+		$this->output('Processing packages...');
 
 		foreach($this->xml->packages->package as $package)
 		{
@@ -121,7 +125,7 @@ class JeJoo extends JCli
 
 		}//foreach
 
-		$this->output('Processing queries...', true, 'green');
+		$this->output('Processing queries...');
 
 		$this->processQueries();
 
@@ -177,7 +181,7 @@ class JeJoo extends JCli
 		if(!file_exists(JPATH_BASE.'/checkout'))
 		{
 			//-- Clone repository
-			$this->output('creating...', false);
+			$this->output('creating...', false, 'yellow');
 
 			chdir(JPATH_BASE);
 			exec('git clone git@github.com:joomla/joomla-cms.git checkout');
@@ -188,7 +192,7 @@ class JeJoo extends JCli
 		else
 		{
 			//-- Update existing repository
-			$this->output('updating...', false);
+			$this->output('updating...', false, 'yellow');
 
 			chdir(JPATH_BASE.'/checkout');
 			exec('git fetch origin');
@@ -208,12 +212,12 @@ class JeJoo extends JCli
 
 			if($lastSHA != $actualSHA)
 			{
-				$this->output('repo has changed ! ...', false);
+				$this->output('repo has changed ! ...', false, 'yellow');
 				$changed = true;
 			}
 			else
 			{
-				$this->output('up to date...', false);
+				$this->output('up to date...', false, 'green');
 			}
 		}
 
@@ -221,7 +225,7 @@ class JeJoo extends JCli
 
 		if($changed)
 		{
-			$this->output('copy to *stripped* folder...', false);
+			$this->output('copy to *stripped* folder...', false, 'yellow');
 
 			if(JFolder::exists(JPATH_BASE.'/stripped')) JFolder::delete(JPATH_BASE.'/stripped');
 
@@ -346,7 +350,7 @@ class JeJoo extends JCli
 
 		// 		DProfiler::markFinished();
 
-		$this->output('Writing sql files...', true, 'green');
+		$this->output('Writing sql files...');
 
 		foreach($stripResult as $package => $queries)
 		{
@@ -363,7 +367,7 @@ class JeJoo extends JCli
 
 		// 		DProfiler::markFinished();
 
-		$this->output('Writing modified Joomla! sql file...', true, 'green');
+		$this->output('Writing modified Joomla! sql file...');
 
 		$handle = fopen(JPATH_BASE.'/stripped/installation/sql/mysql/joomla.sql', 'w');
 
@@ -435,7 +439,7 @@ class JeJoo extends JCli
 
 	private function output($text = '', $nl = true, $fg = '', $bg = '')
 	{
-		if( ! $this->verbose) return;
+		if( ! $this->config->verbose) return;
 
 		if($fg && COLORS) $this->out(Console_Color::fgcolor($fg), false);
 		if($bg && COLORS) $this->out(Console_Color::bgcolor($bg), false);

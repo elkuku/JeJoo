@@ -1,0 +1,8 @@
+# This file contains the paths to project JEJoo!
+basePath=/home/elkuku/eclipsespace/jejo/JeJoo
+scripts jejoo_scripts
+
+web/component/admin/com_jejoo administrator/components/com_jejoo
+web/component/site/com_jejoo components/com_jejoo
+
+web/mod_jejostatus modules/mod_jejostatus

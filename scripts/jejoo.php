@@ -3,6 +3,16 @@
 /**
  * JeJoo - Just enough Joomla!
  *
+ * A Joomla! CMS Distribution Builder
+ *
+ * Options:
+ *
+ * --help - Try this first =;)
+ *
+ * --forcebuild - Force a build even if the repo has not changed.
+ *
+ * -q - Be quiet.
+ *
  * @author Nikolai Plath - elkuku - 11/2011
  * @author - You ?
  *
@@ -13,10 +23,10 @@
 
 'cli' == PHP_SAPI || die('This script must be run from the command line');
 
-//-- watch out =;)
+//-- Watch out =;)
 error_reporting(-1);
 
-//-- got xampp and probs setting the include path ? eclipse ?..
+//-- Got xampp and probs setting the include path ? eclipse ?..
 set_include_path(get_include_path().PATH_SEPARATOR.'/opt/lampp/lib/php');
 
 //-- KuKu's ConsoleColor - see: http://elkuku.github.com/pear/
@@ -32,482 +42,510 @@ define('COLORS', class_exists('Console_Color'));
 define('_JEXEC', 1);
 
 //-- Bootstrap the Joomla! Platform.
-require_once $_SERVER['JOOMLA_PLATFORM_PATH'].'/libraries/import.php';
+require $_SERVER['JOOMLA_PLATFORM_PATH'].'/libraries/import.php';
 
 define('JPATH_BASE', dirname(__FILE__));
 
-define('JPATH_SITE', JPATH_BASE);//coupled
+define('JPATH_SITE', JPATH_BASE);//still married
 
 jimport('joomla.application.cli');
 jimport('joomla.filesystem.folder');
 jimport('joomla.filesystem.file');
 
 /**
- * JeJoo - Just enough Joomla!
+ * JeJoo - Just enough Joomla!.
  *
  * A Joomla! CMS distribution builder.
  */
 class JeJoo extends JCli
 {
-	private $xml = null;
-
-	/**
-	 * Main function.
-	 *
-	 * @throws Exception
-	 */
-	public function execute()
-	{
-		$this->config->verbose =($this->input->get('-q')) ? false : true;
-
-		$this->output('-------------------------------');
-		$this->output('-- JeJoo - JustEnoughJoomla! --');
-		$this->output('--  Joomla! Distro Builder   --');
-		$this->output('-------------------------------');
-		$this->output(Console_Color::convert('%n'));
-
-		$cfg = JPATH_BASE.'/elements.xml';
-
-		if( ! file_exists($cfg))
-		throw new Exception('The expected xml elements file has not been found in: '.$cfg);
-
-		if( ! $this->config->get('outputPath'))
-		throw new Exception('Please specify an output path in your config.php');
-
-		$this->xml = JFactory::getXML($cfg);
-
-		$this->clean();
-
-		$this->output('Processing the base repo...', false, 'purple');
-
-		if( ! $this->checkRepo())
-		{
-			$this->output();
-			$this->output('Nothing has changed - come back later =;)', true, 'green');
-			$this->output();
-
-			return;
-		}
-
-		$this->output('OK', true, 'green');
-
-		$this->processFiles();
-
-		$this->output('Processing queries...', true, 'purple');
-
-		$this->processQueries();
-
-		/*
-		 # Creating archives
-		echo "Creating archives..." >> $LOG
-
-		COMPRESSED=$JEJO_WEB_PATH/builds/jejo
-
-		mkdir -p $COMPRESSED >> $LOG
-
-		cd $BASE/export
-		tar -czf $COMPRESSED/Joomla_trunk_export_rev_$REVNO.tar.gz *
-
-		cd $BASE/stripped_nolibs
-		tar -czf $COMPRESSED/Joomla_JEJo_NOLIBS_rev_$REVNO.tar.gz *
-
-		cd $BASE/fishbone
-		tar -czf $COMPRESSED/Joomla_Fishbone_rev_$REVNO.tar.gz *
-
-		cd $WEB/stripped
-		tar -czf $COMPRESSED/Joomla_JEJo_rev_$REVNO.tar.gz *
-		logTime
-		*/
-
-		$this->output();
-		$this->output('Finished =;)', true, 'green');
-		$this->output();
-	}
-
-	/**
-	 * Clean and create the build environment.
-	 *
-	 * @return void
-	 */
-	private function clean()
-	{
-		JFolder::delete(JPATH_BASE.'/extract');
-		JFolder::create(JPATH_BASE.'/extract');
-		JFolder::delete(JPATH_BASE.'/stripped');
-		JFolder::create(JPATH_BASE.'/stripped');
-	}
-
-	/**
-	 * Create or update from a GitHub repository
-	 *
-	 * @return boolean True if the repo has changed or has been created
-	 */
-	private function checkRepo()
-	{
-		$changed = false;
-
-		if(!file_exists(JPATH_BASE.'/checkout'))
-		{
-			//-- Clone repository
-			$this->output('creating...', false, 'yellow');
-
-			chdir(JPATH_BASE);
-			exec('git clone git@github.com:joomla/joomla-cms.git checkout');
-			chdir(JPATH_BASE.'/checkout');
-
-			$changed = true;
-		}
-		else
-		{
-			//-- Update existing repository
-			$this->output('updating...', false, 'yellow');
-
-			chdir(JPATH_BASE.'/checkout');
-			exec('git fetch origin');
-			exec('git merge origin/master');
-		}
-
-		$actualSHA = exec('git rev-parse HEAD');
-
-		if( ! JFile::exists(JPATH_BASE.'/lastSHA'))
-		{
-			JFile::write(JPATH_BASE.'/lastSHA', $actualSHA);
-			$changed = true;
-		}
-		else
-		{
-			$lastSHA = JFile::read(JPATH_BASE.'/lastSHA');
-
-			if($lastSHA != $actualSHA)
-			{
-				$this->output('repo has changed ! ...', false, 'yellow');
-				$changed = true;
-			}
-			else
-			{
-				$this->output('up to date...', false, 'green');
-			}
-		}
-
-		$changed = true;//@todo REMOVEME !!!
-
-		if($changed)
-		{
-			$this->output('copy to *stripped* folder...', false, 'yellow');
-
-			if(JFolder::exists(JPATH_BASE.'/stripped')) JFolder::delete(JPATH_BASE.'/stripped');
-
-			JFolder::copy(JPATH_BASE.'/checkout', JPATH_BASE.'/stripped');
-
-			JFolder::delete(JPATH_BASE.'/stripped/.git');
-		}
-
-		return $changed;
-	}//function
-
-	/**
-	 * Copy and or remove files and folders.
-	 *
-	 * @return boolean
-	 */
-	private function processFiles()
-	{
-		$this->output('Processing removals...', true, 'purple');
-
-		foreach($this->xml->removes->file as $file)
-		{
-			$this->output((string)$file.'...', false);
-
-			if(JFile::delete(JPATH_BASE.'/stripped/'.$file))
-			{
-				$this->output('ok', true, 'green');
-
-			}
-			else
-			{
-				$this->output('FAILED', true, 'red');
-			}
-		}//foreach
-
-		$this->output('Processing packages...', true, 'purple');
-
-		foreach($this->xml->packages->package as $p)
-		{
-			$package = $p->attributes()->name;
-				
-			$this->output($package.'...', true, 'cyan');
-
-			JFolder::create(JPATH_BASE.'/extract/'.$package);
-
-			foreach($p->item as $item)
-			{
-				$this->output((string)$item.'...', false);
-					
-				if(is_dir(JPATH_BASE.'/stripped/'.$item))
-				{
-					JFolder::create(JPATH_BASE.'/extract/'.$package.'/'.$item);
-				}
-				else
-				{
-					JFolder::create(dirname(JPATH_BASE.'/extract/'.$package.'/'.$item));
-				}
-
-				if(rename(JPATH_BASE.'/stripped/'.$item, JPATH_BASE.'/extract/'.$package.'/'.$item))
-				{
-					$this->output('ok', true, 'green');
-				}
-				else
-				{
-					$this->output('FAILED', true, 'red');
-				}
-			}//foreach
-		}//foreach
-
-		return true;
-	}//function
-
-	/**
-	 * Method to process the standard Joomla! install sql file according to
-	 * specifiactions given in a xml file.
-	 *
-	 * @throws Exception
-	 *
-	 * @return boolean
-	 */
-	private function processQueries()
-	{
-		if( ! file_exists(JPATH_BASE.'/stripped/installation/sql/mysql/joomla.sql'))
-		throw new Exception('Joomla! SQL not found');
-
-		$origSql = implode('', file(JPATH_BASE.'/stripped/installation/sql/mysql/joomla.sql'));
-
-		$origQueries = $this->splitQueries($origSql);
-
-		$queryResult = array();
-		$stripResult = array();
-
-		foreach($this->xml->packages->package as $p)
-		{
-			$package = (string)$p->attributes()->name;
-			$this->output((string)$package, true, 'cyan');
-
-			if( ! isset($stripResult[$package])) $stripResult[$package] = array();
-
-			foreach($p->query as $query)
-			{
-				$command = (string)$query->attributes()->type;
-				$table = (string)$query;
-				$item = (string)$query->attributes()->item;
-
-				$this->output($command.' - '.$table.'...', false);
-
-				foreach($origQueries as $qNum => $query)
-				{
-					$query = trim($query);
-					$pieces = explode("\n", $query);
-
-					$qCommand = $pieces[0];
-
-					$qParts = explode(' ', $qCommand);
-
-					if(strtolower($qParts[0]) != $command)
-					continue;
-
-					if( ! preg_match('/#__'.$table.'`/', $qCommand))
-					continue;
-
-					switch($command)
-					{
-						case 'create':
-							$stripResult[$package][] = $query;
-							$origQueries[$qNum] = '';
-							break;
-
-						case 'insert':
-							if( ! isset($item))
-							exit('No strip set: '.$line);
-
-							$strip = $item;
-
-							$qNew = array();
-							$qNew[] = $qCommand;
-
-							if(strpos($qCommand, 'VALUES') === false)
-							$qNew[] = 'VALUES';
-
-							$qOld = array();
-							$found = false;
-
-							foreach($pieces as $p)
-							{
-								if(preg_match('/'.$strip.'/', $p))
-								{
-									$qNew[] = $p;
-									$found = true;
-								}
-								else
-								{
-									$qOld[] = $p;
-								}
-							}//foreach
-
-							$last = count($qNew) - 1;
-							$qNew[$last] = rtrim($qNew[$last], ',;');
-							$qNew[$last] .= ';';
-
-							$last = count($qOld) - 1;
-
-							if($last >= 0)
-							{
-								$qOld[$last] = rtrim($qOld[$last], ',;');
-								$qOld[$last] .= ';';
-							}
-
-							if($found)
-							{
-								$stripResult[$package][] = implode("\n", $qNew);
-								$origQueries[$qNum] = trim(implode("\n", $qOld));
-							}
-							break;
-
-						default:
-							break;
-					}//switch
-				}//foreach
-				
-				$this->output('ok', true, 'green');
-			}//foreach
-		}//foreach
-
-		// 		DProfiler::markFinished();
-
-		$this->output('Writing sql files...', true, 'purple');
-
-		foreach($stripResult as $package => $queries)
-		{
-			$this->output($package.'...', false);
-			
-			if( ! $queries)
-			{
-				$this->output('no queries', true, 'yellow');
-				
-				continue;
-			}
-
-			$fName = JPATH_BASE.'/extract/'.$package.'/install.sql';
-			$handle = fopen($fName, 'w');
-
-			if( ! $handle)
-			throw new Exception('Can not open '.$fName);
-
-			fwrite($handle, implode("\n\n", $queries));
-			
-			$this->output('ok', true, 'green');
-		}//foreach
-
-		// 		DProfiler::markFinished();
-		
-		$this->output('ok', true, 'green');
-
-		$this->output('Writing modified Joomla! sql file...', false, 'purple');
-
-		$handle = fopen(JPATH_BASE.'/stripped/installation/sql/mysql/joomla.sql', 'w');
-
-		fwrite($handle, implode("\n\n", $origQueries));
-		
-		$this->output('ok', true, 'green');
-
-		// 		DProfiler::markFinished();
-
-		//-- Dis is a test..
-		//-- Absolute paths should be cleaned by the following bash script
-		// 		echo $TEST_UndefinedVar;
-
-		return true;
-	}//function
-
-	/**
-	 * Method to split up queries from a schema file into an array.
-	 *
-	 * @access	protected
-	 * @param	string	SQL schema.
-	 * @return	array	Queries to perform.
-	 * @since	1.0
-	 */
-	private function splitQueries($sql)
-	{
-		// Initialise variables.
-		$buffer		= array();
-		$queries	= array();
-		$in_string	= false;
-
-		// Trim any whitespace.
-		$sql = trim($sql);
-
-		// Remove comment lines.
-		$sql = preg_replace("/\n\#[^\n]*/", '', "\n".$sql);
-
-		// Parse the schema file to break up queries.
-		for($i = 0; $i < strlen($sql) - 1; $i ++)
-		{
-			if($sql[$i] == ";" && ! $in_string)
-			{
-				$queries[] = trim(substr($sql, 0, $i + 1));
-				$sql = substr($sql, $i + 1);
-				$i = 0;
-			}
-
-			if($in_string
-			&& ($sql[$i] == $in_string)
-			&& $buffer[1] != "\\")
-			{
-				$in_string = false;
-			}
-			else if( ! $in_string
-			&& ($sql[$i] == '"' || $sql[$i] == "'")
-			&& ( ! isset ($buffer[0]) || $buffer[0] != "\\"))
-			{
-				$in_string = $sql[$i];
-			}
-
-			if(isset($buffer[1])) $buffer[0] = $buffer[1];
-
-			$buffer[1] = $sql[$i];
-		}//for
-
-		// If the is anything left over, add it to the queries.
-		if( ! empty($sql)) $queries[] = $sql;
-
-		return $queries;
-	}//function
-
-	private function output($text = '', $nl = true, $fg = '', $bg = '')
-	{
-		if( ! $this->config->verbose) return;
-
-		if($fg && COLORS) $this->out(Console_Color::fgcolor($fg), false);
-		if($bg && COLORS) $this->out(Console_Color::bgcolor($bg), false);
-
-		$this->out($text, $nl);
-
-		if(($fg || $bg) && COLORS) $this->out(Console_Color::convert('%n'), false);
-	}//function
+    private $xml = null;
 
+    private function HELP()
+    {
+        $this->output('Usage:', true, 'green');
+
+        $this->output('
+jejoo.php [-q] [--forcebuild]
+
+--help - Try this first =;)
+
+--forcebuild - Force a build even if the repo has not changed.
+
+-q - Be quiet.
+');
+        $this->output('=;)', true, 'green');
+    }//function
+
+    /**
+     * Main function.
+     *
+     * @throws Exception
+     */
+    public function execute()
+    {
+        $this->output('-------------------------------');
+        $this->output('-- JeJoo - JustEnoughJoomla! --');
+        $this->output('--  Joomla! Distro Builder   --');
+        $this->output('-------------------------------');
+
+        if($this->input->get('help'))
+        {
+            $this->HELP();
+
+            return;
+        }
+
+        $this->setup();
+
+        if( ! $this->checkRepo())
+        {
+            $this->output();
+            $this->output('Nothing has changed - come back later =;)', true, 'green');
+            $this->output();
+
+            return;
+        }
+
+        $this->output('ok', true, 'green');
+
+        $this->processFiles();
+
+        $this->processQueries();
+
+        /*
+         # Creating archives
+        echo "Creating archives..." >> $LOG
+
+        COMPRESSED=$JEJO_WEB_PATH/builds/jejo
+
+        mkdir -p $COMPRESSED >> $LOG
+
+        cd $BASE/export
+        tar -czf $COMPRESSED/Joomla_trunk_export_rev_$REVNO.tar.gz *
+
+        cd $BASE/stripped_nolibs
+        tar -czf $COMPRESSED/Joomla_JEJo_NOLIBS_rev_$REVNO.tar.gz *
+
+        cd $BASE/fishbone
+        tar -czf $COMPRESSED/Joomla_Fishbone_rev_$REVNO.tar.gz *
+
+        cd $WEB/stripped
+        tar -czf $COMPRESSED/Joomla_JEJo_rev_$REVNO.tar.gz *
+        logTime
+        */
+
+        $this->output();
+        $this->output('Finished =;)', true, 'green');
+        $this->output();
+    }//function
+
+    /**
+     * Clean and create the build environment.
+     *
+     * @return void
+     */
+    private function setup()
+    {
+        $cfg = JPATH_BASE.'/elements.xml';
+
+        if( ! file_exists($cfg))
+        throw new Exception('The expected xml elements file has not been found in: '.$cfg);
+
+        $this->xml = JFactory::getXML($cfg);
+
+        if( ! $this->xml)
+        throw new Exception('Invalid elements.xml file');
+
+        define('PATH_BUILD', $this->config->get('buildPath'));
+        define('PATH_TARGET', $this->config->get('targetPath'));
+
+        $this->output('elements.xml: '.$cfg);
+        $this->output('Build path  : '.PATH_BUILD);
+        $this->output('Target path : '.PATH_TARGET);
+
+        if( ! PATH_BUILD || ! is_dir(PATH_BUILD))
+        throw new Exception('Please specify a valid build path in your configuration.php');
+
+        if( ! PATH_TARGET || ! is_dir(PATH_TARGET))
+        throw new Exception('Please specify a valid target path in your configuration.php');
+
+        JFolder::delete(PATH_BUILD.'/extract');
+        JFolder::create(PATH_BUILD.'/extract');
+        JFolder::delete(PATH_BUILD.'/stripped');
+        JFolder::create(PATH_BUILD.'/stripped');
+        JFolder::create(PATH_BUILD.'/logs');
+
+        return true;
+    }//function
+
+    /**
+     * Create or update from a GitHub repository
+     *
+     * @return boolean True if the repo has changed or has been created
+     */
+    private function checkRepo()
+    {
+        $this->output('Processing the base repo...', false, 'purple');
+
+        $changed = false;
+
+        if( ! file_exists(PATH_BUILD.'/checkout'))
+        {
+            //-- Clone repository
+            $this->output('creating...', false, 'yellow');
+
+            chdir(PATH_BUILD);
+            exec('git clone git@github.com:joomla/joomla-cms.git checkout');
+            chdir(PATH_BUILD.'/checkout');
+
+            $changed = true;
+        }
+        else
+        {
+            //-- Update existing repository
+            chdir(PATH_BUILD.'/checkout');
+
+            $this->output('updating...', false, 'yellow');
+
+            exec('git fetch origin');
+            exec('git merge origin/master');
+        }
+
+        $actualSHA = exec('git rev-parse HEAD');
+
+        if( ! JFile::exists(PATH_BUILD.'/logs/lastSHA'))
+        {
+            $this->output('No previous repo information found ! ...', false, 'yellow');
+            $changed = true;
+        }
+        else
+        {
+            $lastSHA = JFile::read(PATH_BUILD.'/logs/lastSHA');
+
+            if($lastSHA != $actualSHA)
+            {
+                $this->output('repo has changed ! ...', false, 'yellow');
+                $changed = true;
+            }
+            else
+            {
+                $this->output('up to date...', false, 'green');
+            }
+        }
+
+        $lastCommit = shell_exec('git log -n 1');
+
+        JFile::write(PATH_BUILD.'/logs/lastSHA', $actualSHA);
+        JFile::write(PATH_BUILD.'/logs/lastCommit', $lastCommit);
+
+        $changed = $changed || $this->input->get('forcebuild');
+
+        if($changed)
+        {
+            $this->output('copy to *stripped* folder...', false, 'yellow');
+
+            JFolder::copy('checkout', 'stripped', PATH_BUILD, true);
+
+            JFolder::delete(PATH_BUILD.'/stripped/.git');
+        }
+
+        return $changed;
+    }//function
+
+    /**
+     * Copy and or remove files and folders.
+     *
+     * @return boolean
+     */
+    private function processFiles()
+    {
+        $this->output('Processing removals...', true, 'purple');
+
+        foreach($this->xml->removes->file as $file)
+        {
+            $this->output((string)$file.'...', false);
+
+            if(JFile::delete(PATH_BUILD.'/stripped/'.$file))
+            {
+                $this->output('ok', true, 'green');
+            }
+            else
+            {
+                $this->output('FAILED', true, 'red');
+            }
+        }//foreach
+
+        $this->output('Processing packages...', true, 'purple');
+
+        foreach($this->xml->packages->package as $p)
+        {
+            $package = $p->attributes()->name;
+
+            $this->output($package.'...', true, 'cyan');
+
+            JFolder::create(PATH_BUILD.'/extract/'.$package);
+
+            foreach($p->item as $item)
+            {
+                $this->output((string)$item.'...', false);
+
+                JFolder::create(dirname(PATH_BUILD.'/extract/'.$package.'/'.$item));
+
+                if(rename(PATH_BUILD.'/stripped/'.$item, PATH_BUILD.'/extract/'.$package.'/'.$item))
+                {
+                    $this->output('ok', true, 'green');
+                }
+                else
+                {
+                    $this->output('FAILED', true, 'red');
+                }
+            }//foreach
+        }//foreach
+
+        return true;
+    }//function
+
+    /**
+     * Method to process the standard Joomla! CMS install SQL file
+     * according to specifiactions given in a xml file.
+     *
+     * Automagic =;)
+     *
+     * @throws Exception
+     *
+     * @return boolean
+     */
+    private function processQueries()
+    {
+        $this->output('Processing queries...', true, 'purple');
+
+        if( ! file_exists(PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql'))
+        throw new Exception('Joomla! SQL not found');
+
+        $origSql = implode('', file(PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql'));
+
+        $origQueries = $this->splitQueries($origSql);
+
+        $queryResult = array();
+        $stripResult = array();
+
+        foreach($this->xml->packages->package as $p)
+        {
+            $package = (string)$p->attributes()->name;
+
+            $this->output((string)$package, true, 'cyan');
+
+            if( ! isset($stripResult[$package])) $stripResult[$package] = array();
+
+            foreach($p->query as $query)
+            {
+                $command = (string)$query->attributes()->type;
+                $table = (string)$query;
+                $item = (string)$query->attributes()->item;
+
+                $this->output($command.' - '.$table.'...', false);
+
+                foreach($origQueries as $qNum => $query)
+                {
+                    $query = trim($query);
+                    $pieces = explode("\n", $query);
+
+                    $qCommand = $pieces[0];
+
+                    $qParts = explode(' ', $qCommand);
+
+                    if(strtolower($qParts[0]) != $command)
+                    continue;
+
+                    if( ! preg_match('/#__'.$table.'`/', $qCommand))
+                    continue;
+
+                    switch($command)
+                    {
+                        case 'create':
+                            $stripResult[$package][] = $query;
+                            $origQueries[$qNum] = '';
+                            break;
+
+                        case 'insert':
+                            if( ! isset($item))
+                            exit('No strip set: '.$line);
+
+                            $strip = $item;
+
+                            $qNew = array();
+                            $qNew[] = $qCommand;
+
+                            if(strpos($qCommand, 'VALUES') === false)
+                            $qNew[] = 'VALUES';
+
+                            $qOld = array();
+                            $found = false;
+
+                            foreach($pieces as $p)
+                            {
+                                if(preg_match('/'.$strip.'/', $p))
+                                {
+                                    $qNew[] = $p;
+                                    $found = true;
+                                }
+                                else
+                                {
+                                    $qOld[] = $p;
+                                }
+                            }//foreach
+
+                            $last = count($qNew) - 1;
+                            $qNew[$last] = rtrim($qNew[$last], ',;');
+                            $qNew[$last] .= ';';
+
+                            $last = count($qOld) - 1;
+
+                            if($last >= 0)
+                            {
+                                $qOld[$last] = rtrim($qOld[$last], ',;');
+                                $qOld[$last] .= ';';
+                            }
+
+                            if($found)
+                            {
+                                $stripResult[$package][] = implode("\n", $qNew);
+                                $origQueries[$qNum] = trim(implode("\n", $qOld));
+                            }
+
+                            break;
+
+                        default:
+                            break;
+                    }//switch
+                }//foreach
+
+                $this->output('ok', true, 'green');
+            }//foreach
+        }//foreach
+
+        $this->output('Writing sql files...', true, 'purple');
+
+        foreach($stripResult as $package => $queries)
+        {
+            $this->output($package.'...', false);
+
+            if( ! $queries)
+            {
+                $this->output('no queries', true, 'yellow');
+
+                continue;
+            }
+
+            $fName = PATH_BUILD.'/extract/'.$package.'/install.sql';
+            $buffer = implode("\n\n", $queries);
+
+            if( ! JFile::write($fName, $buffer))
+            throw new Exception('Can not open '.$fName);
+
+            $this->output('ok', true, 'green');
+        }//foreach
+
+        $this->output('ok', true, 'green');
+
+        $this->output('Writing modified Joomla! sql file...', false, 'purple');
+
+        $fName = PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql';
+        $buffer = implode("\n\n", $origQueries);
+
+        if( ! JFile::write($fName, $buffer))
+        throw new Exception('Can not open '.$fName);
+
+        $this->output('ok', true, 'green');
+
+        return true;
+    }//function
+
+    /**
+     * Method to split up queries from a schema file into an array.
+     *
+     * @access	protected
+     * @param	string	SQL schema.
+     * @return	array	Queries to perform.
+     * @since	1.0
+     */
+    private function splitQueries($sql)
+    {
+        // Initialise variables.
+        $buffer		= array();
+        $queries	= array();
+        $in_string	= false;
+
+        // Trim any whitespace.
+        $sql = trim($sql);
+
+        // Remove comment lines.
+        $sql = preg_replace("/\n\#[^\n]*/", '', "\n".$sql);
+
+        // Parse the schema file to break up queries.
+        for($i = 0; $i < strlen($sql) - 1; $i ++)
+        {
+            if($sql[$i] == ";" && ! $in_string)
+            {
+                $queries[] = trim(substr($sql, 0, $i + 1));
+                $sql = substr($sql, $i + 1);
+                $i = 0;
+            }
+
+            if($in_string
+            && ($sql[$i] == $in_string)
+            && $buffer[1] != "\\")
+            {
+                $in_string = false;
+            }
+            else if( ! $in_string
+            && ($sql[$i] == '"' || $sql[$i] == "'")
+            && ( ! isset ($buffer[0]) || $buffer[0] != "\\"))
+            {
+                $in_string = $sql[$i];
+            }
+
+            if(isset($buffer[1])) $buffer[0] = $buffer[1];
+
+            $buffer[1] = $sql[$i];
+        }//for
+
+        // If the is anything left over, add it to the queries.
+        if( ! empty($sql)) $queries[] = $sql;
+
+        return $queries;
+    }//function
+
+    private function output($text = '', $nl = true, $fg = '', $bg = '')
+    {
+        static $verbose = null;
+
+        if(is_null($verbose)) $verbose =($this->input->get('q')) ? false : true;
+
+        if( ! $verbose) return;
+
+        if($fg && COLORS) $this->out(Console_Color::fgcolor($fg), false);
+        if($bg && COLORS) $this->out(Console_Color::bgcolor($bg), false);
+
+        $this->out($text, $nl);
+
+        if(($fg || $bg) && COLORS) $this->out(Console_Color::convert('%n'), false);
+    }//function
 }//class
 
 try
 {
-	// Execute the application.
-	JCli::getInstance('JeJoo')->execute();
+    // Execute the application.
+    JCli::getInstance('JeJoo')->execute();
 
-	exit(0);
+    exit(0);
 }
-catch (Exception $e)
+catch(Exception $e)
 {
-	// An exception has been caught, just echo the message.
-	$m =(COLORS) ? Console_Color::convert('%7%r'.$e->getMessage().'%n') : $e->getMessage();
+    $m =(COLORS) ? Console_Color::convert('%7%r'.$e->getMessage().'%n') : $e->getMessage();
 
-	fwrite(STDOUT, $m . "\n");
+    fwrite(STDOUT, $m."\n");
 
-	exit($e->getCode());
+    exit($e->getCode());
 }//try

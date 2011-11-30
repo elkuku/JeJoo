@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 /**
- * JeJoo - Just enough Joomla!
+ * JEJoo - Just enough Joomla!
  *
  * A Joomla! CMS Distribution Builder
  *
@@ -9,7 +9,10 @@
  *
  * --help - Try this first =;)
  *
+ * --cfgfile <filename> - Path to an elements.xml file (default is elements.xml)
  * --forcebuild - Force a build even if the repo has not changed.
+ * --noremoveindexhtml - Do not remove superfluous index.html files.
+ * --nocolors Don\'t be fancy ;)
  *
  * -q - Be quiet.
  *
@@ -26,18 +29,6 @@
 //-- Watch out =;)
 error_reporting(-1);
 
-//-- Got xampp and probs setting the include path ? eclipse ?..
-set_include_path(get_include_path().PATH_SEPARATOR.'/opt/lampp/lib/php');
-
-//-- KuKu's ConsoleColor - see: http://elkuku.github.com/pear/
-@require 'elkuku/console/Color.php';
-
-//-- OR -- PEAR's ConsoleColor
-if( ! class_exists('Console_Color')) @require 'Console/Color.php';
-
-//-- Any color ?
-define('COLORS', class_exists('Console_Color'));
-
 //-- We are a valid Joomla! entry point.
 define('_JEXEC', 1);
 
@@ -53,11 +44,11 @@ jimport('joomla.filesystem.folder');
 jimport('joomla.filesystem.file');
 
 /**
- * JeJoo - Just enough Joomla!.
+ * JEJoo - Just enough Joomla!.
  *
  * A Joomla! CMS distribution builder.
  */
-class JeJoo extends JCli
+class JEJoo extends JCli
 {
     private $xml = null;
 
@@ -66,11 +57,15 @@ class JeJoo extends JCli
         $this->output('Usage:', true, 'green');
 
         $this->output('
-jejoo.php [-q] [--forcebuild]
+jejoo.php [options]
 
 --help - Try this first =;)
 
+--cfgfile <filename> - Path to an elements.xml file (default is elements.xml).
 --forcebuild - Force a build even if the repo has not changed.
+--noremoveindexhtml - Do not remove superfluous index.html files.
+
+--nocolors Don\'t be fancy ;)
 
 -q - Be quiet.
 ');
@@ -113,6 +108,8 @@ jejoo.php [-q] [--forcebuild]
 
         $this->processQueries();
 
+        $this->processPatches();
+
         /*
          # Creating archives
         echo "Creating archives..." >> $LOG
@@ -124,13 +121,13 @@ jejoo.php [-q] [--forcebuild]
         cd $BASE/export
         tar -czf $COMPRESSED/Joomla_trunk_export_rev_$REVNO.tar.gz *
 
-        cd $BASE/stripped_nolibs
+        cd $BASE/barebone_nolibs
         tar -czf $COMPRESSED/Joomla_JEJo_NOLIBS_rev_$REVNO.tar.gz *
 
         cd $BASE/fishbone
         tar -czf $COMPRESSED/Joomla_Fishbone_rev_$REVNO.tar.gz *
 
-        cd $WEB/stripped
+        cd $WEB/barebone
         tar -czf $COMPRESSED/Joomla_JEJo_rev_$REVNO.tar.gz *
         logTime
         */
@@ -138,6 +135,8 @@ jejoo.php [-q] [--forcebuild]
         $this->output();
         $this->output('Finished =;)', true, 'green');
         $this->output();
+
+        return true;
     }//function
 
     /**
@@ -147,7 +146,26 @@ jejoo.php [-q] [--forcebuild]
      */
     private function setup()
     {
-        $cfg = JPATH_BASE.'/elements.xml';
+        if($this->input->get('nocolors'))
+        {
+            define('COLORS', 0);
+        }
+        else
+        {
+            //-- Got xampp and probs setting the include path ? eclipse ?..
+            set_include_path(get_include_path().PATH_SEPARATOR.'/opt/lampp/lib/php');
+
+            //-- El KuKu's ConsoleColor - see: http://elkuku.github.com/pear/
+            @include 'elkuku/console/Color.php';
+
+            //-- OR -- PEAR's ConsoleColor
+            if( ! class_exists('Console_Color')) @include 'Console/Color.php';
+
+            //-- Any color ?
+            define('COLORS', class_exists('Console_Color'));
+        }
+
+        $cfg = JPATH_BASE.'/'.$this->input->get('cfgfile', 'elements.xml');
 
         if( ! file_exists($cfg))
         throw new Exception('The expected xml elements file has not been found in: '.$cfg);
@@ -170,10 +188,11 @@ jejoo.php [-q] [--forcebuild]
         if( ! PATH_TARGET || ! is_dir(PATH_TARGET))
         throw new Exception('Please specify a valid target path in your configuration.php');
 
-        JFolder::delete(PATH_BUILD.'/extract');
-        JFolder::create(PATH_BUILD.'/extract');
-        JFolder::delete(PATH_BUILD.'/stripped');
-        JFolder::create(PATH_BUILD.'/stripped');
+        JFolder::delete(PATH_BUILD.'/packages');
+        JFolder::delete(PATH_BUILD.'/barebone');
+
+        JFolder::create(PATH_BUILD.'/packages/joomla');
+        JFolder::create(PATH_BUILD.'/barebone');
         JFolder::create(PATH_BUILD.'/logs');
 
         return true;
@@ -243,11 +262,11 @@ jejoo.php [-q] [--forcebuild]
 
         if($changed)
         {
-            $this->output('copy to *stripped* folder...', false, 'yellow');
+            $this->output('copy to *barebone* folder...', false, 'yellow');
 
-            JFolder::copy('checkout', 'stripped', PATH_BUILD, true);
+            JFolder::copy('checkout', 'barebone', PATH_BUILD, true);
 
-            JFolder::delete(PATH_BUILD.'/stripped/.git');
+            JFolder::delete(PATH_BUILD.'/barebone/.git');
         }
 
         return $changed;
@@ -260,13 +279,24 @@ jejoo.php [-q] [--forcebuild]
      */
     private function processFiles()
     {
+        if( ! $this->input->get('noremoveindexhtml'))
+        {
+            $this->output('Removing superfluous index.html files...', true, 'purple', false);
+            $indexhtmls = JFolder::files(PATH_BUILD.'/barebone', 'index.html', true, true);
+            $this->output('found '.count($indexhtmls).'...', false);
+
+            JFile::delete($indexhtmls);
+
+            $this->output('ok');
+        }
+
         $this->output('Processing removals...', true, 'purple');
 
         foreach($this->xml->removes->file as $file)
         {
             $this->output((string)$file.'...', false);
 
-            if(JFile::delete(PATH_BUILD.'/stripped/'.$file))
+            if(JFile::delete(PATH_BUILD.'/barebone/'.$file))
             {
                 $this->output('ok', true, 'green');
             }
@@ -284,15 +314,16 @@ jejoo.php [-q] [--forcebuild]
 
             $this->output($package.'...', true, 'cyan');
 
-            JFolder::create(PATH_BUILD.'/extract/'.$package);
+            JFolder::create(PATH_BUILD.'/packages/joomla/'.$package);
 
             foreach($p->item as $item)
             {
                 $this->output((string)$item.'...', false);
 
-                JFolder::create(dirname(PATH_BUILD.'/extract/'.$package.'/'.$item));
+                JFolder::create(dirname(PATH_BUILD.'/packages/joomla/'.$package.'/'.$item));
 
-                if(rename(PATH_BUILD.'/stripped/'.$item, PATH_BUILD.'/extract/'.$package.'/'.$item))
+                if(rename(PATH_BUILD.'/barebone/'.$item
+                        , PATH_BUILD.'/packages/joomla/'.$package.'/'.$item))
                 {
                     $this->output('ok', true, 'green');
                 }
@@ -302,6 +333,65 @@ jejoo.php [-q] [--forcebuild]
                 }
             }//foreach
         }//foreach
+
+        return true;
+    }//function
+
+    private function processPatches()
+    {
+        //-- Step 1: check if the patch(es) can be applied
+
+        $files = JFolder::files(JPATH_BASE.'/patches', '.', false, true);
+
+        chdir(PATH_BUILD.'/barebone');
+
+        $errors = array();
+
+        $this->output('Checking patches...', false);
+
+        foreach($files as $file)
+        {
+            if(false !== strpos($file, 'BAD'))
+            continue;
+
+            $test = shell_exec('git apply --check '.$file.' 2>&1');
+
+            if($test)
+            $errors[] = $test;
+        }//foreach
+
+        if($errors)
+        {
+            $this->output();
+            $this->output('Unable to apply the following patch(es)', true, 'red');
+
+            foreach($errors as $error)
+            {
+                $this->output($error, true, 'red');
+            }//foreach
+
+            //-- @todo throw an exception on error ¿
+
+            return false;
+        }
+
+        //-- Step 2: Apply the patch(es)
+
+        $this->output('Applying patches...', false);
+
+        foreach($files as $file)
+        {
+            if(false !== strpos($file, 'BAD'))
+            continue;
+
+            $name = JFile::getName($file);
+            $test = shell_exec('git apply '.$file.' 2>&1');
+
+            if($test)
+            $this->output($test);
+        }//foreach
+
+        $this->output('ok', true, 'green');
 
         return true;
     }//function
@@ -320,10 +410,10 @@ jejoo.php [-q] [--forcebuild]
     {
         $this->output('Processing queries...', true, 'purple');
 
-        if( ! file_exists(PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql'))
+        if( ! file_exists(PATH_BUILD.'/barebone/installation/sql/mysql/joomla.sql'))
         throw new Exception('Joomla! SQL not found');
 
-        $origSql = implode('', file(PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql'));
+        $origSql = implode('', file(PATH_BUILD.'/barebone/installation/sql/mysql/joomla.sql'));
 
         $origQueries = $this->splitQueries($origSql);
 
@@ -417,6 +507,7 @@ jejoo.php [-q] [--forcebuild]
                             break;
 
                         default:
+                            //nodefault..
                             break;
                     }//switch
                 }//foreach
@@ -438,7 +529,7 @@ jejoo.php [-q] [--forcebuild]
                 continue;
             }
 
-            $fName = PATH_BUILD.'/extract/'.$package.'/install.sql';
+            $fName = PATH_BUILD.'/packages/joomla/'.$package.'/install.sql';
             $buffer = implode("\n\n", $queries);
 
             if( ! JFile::write($fName, $buffer))
@@ -451,7 +542,7 @@ jejoo.php [-q] [--forcebuild]
 
         $this->output('Writing modified Joomla! sql file...', false, 'purple');
 
-        $fName = PATH_BUILD.'/stripped/installation/sql/mysql/joomla.sql';
+        $fName = PATH_BUILD.'/barebone/installation/sql/mysql/joomla.sql';
         $buffer = implode("\n\n", $origQueries);
 
         if( ! JFile::write($fName, $buffer))
@@ -537,7 +628,7 @@ jejoo.php [-q] [--forcebuild]
 try
 {
     // Execute the application.
-    JCli::getInstance('JeJoo')->execute();
+    JCli::getInstance('JEJoo')->execute();
 
     exit(0);
 }

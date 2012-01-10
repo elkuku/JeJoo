@@ -25,6 +25,7 @@
  */
 
 'cli' == PHP_SAPI || die('This script must be run from the command line');
+version_compare(PHP_VERSION, '5.3.0') >= 0 || die('This script requires PHP 5.3');
 
 //-- Watch out =;)
 error_reporting(-1);
@@ -33,9 +34,9 @@ error_reporting(-1);
 define('_JEXEC', 1);
 
 //-- Bootstrap the Joomla! Platform.
-require $_SERVER['JOOMLA_PLATFORM_PATH'].'/libraries/import.php';
+require getenv('JOOMLA_PLATFORM_PATH').'/libraries/import.php';
 
-define('JPATH_BASE', dirname(__FILE__));
+define('JPATH_BASE', __DIR__);
 
 define('JPATH_SITE', JPATH_BASE);//still married
 
@@ -48,7 +49,7 @@ jimport('joomla.filesystem.file');
  *
  * A Joomla! CMS distribution builder.
  */
-class JEJoo extends JCli
+class JEJoo extends JApplicationCli
 {
     private $xml = null;
 
@@ -76,6 +77,8 @@ jejoo.php [options]
      * Main function.
      *
      * @throws Exception
+     *
+     * @return bool
      */
     public function execute()
     {
@@ -88,7 +91,7 @@ jejoo.php [options]
         {
             $this->HELP();
 
-            return;
+            return true;
         }
 
         $this->setup();
@@ -99,38 +102,15 @@ jejoo.php [options]
             $this->output('Nothing has changed - come back later =;)', true, 'green');
             $this->output();
 
-            return;
+            return true;
         }
 
         $this->output('ok', true, 'green');
 
-        $this->processFiles();
-
-        $this->processQueries();
-
-        $this->processPatches();
-
-        /*
-         # Creating archives
-        echo "Creating archives..." >> $LOG
-
-        COMPRESSED=$JEJO_WEB_PATH/builds/jejo
-
-        mkdir -p $COMPRESSED >> $LOG
-
-        cd $BASE/export
-        tar -czf $COMPRESSED/Joomla_trunk_export_rev_$REVNO.tar.gz *
-
-        cd $BASE/barebone_nolibs
-        tar -czf $COMPRESSED/Joomla_JEJo_NOLIBS_rev_$REVNO.tar.gz *
-
-        cd $BASE/fishbone
-        tar -czf $COMPRESSED/Joomla_Fishbone_rev_$REVNO.tar.gz *
-
-        cd $WEB/barebone
-        tar -czf $COMPRESSED/Joomla_JEJo_rev_$REVNO.tar.gz *
-        logTime
-        */
+        $this
+            ->processFiles()
+            ->processQueries()
+            ->processPatches();
 
         $this->output();
         $this->output('Finished =;)', true, 'green');
@@ -142,7 +122,7 @@ jejoo.php [options]
     /**
      * Clean and create the build environment.
      *
-     * @return void
+     * @return JEJoo
      */
     private function setup()
     {
@@ -195,7 +175,7 @@ jejoo.php [options]
         JFolder::create(PATH_BUILD.'/barebone');
         JFolder::create(PATH_BUILD.'/logs');
 
-        return true;
+        return $this;
     }//function
 
     /**
@@ -275,7 +255,7 @@ jejoo.php [options]
     /**
      * Copy and or remove files and folders.
      *
-     * @return boolean
+     * @return JEJoo
      */
     private function processFiles()
     {
@@ -308,6 +288,7 @@ jejoo.php [options]
 
         $this->output('Processing packages...', true, 'purple');
 
+        /** @var $p SimpleXMLElement */
         foreach($this->xml->packages->package as $p)
         {
             $package = $p->attributes()->name;
@@ -334,9 +315,14 @@ jejoo.php [options]
             }//foreach
         }//foreach
 
-        return true;
+        return $this;
     }//function
 
+    /**
+     * Apply patches to the build.
+     *
+     * @return JEJoo
+     */
     private function processPatches()
     {
         //-- Step 1: check if the patch(es) can be applied
@@ -351,7 +337,7 @@ jejoo.php [options]
 
         foreach($files as $file)
         {
-            if(false !== strpos($file, 'BAD'))
+            if(false !== strpos($file, 'BAD') || false !== strpos($file, 'xreadme.md'))
             continue;
 
             $test = shell_exec('git apply --check '.$file.' 2>&1');
@@ -372,7 +358,7 @@ jejoo.php [options]
 
             //-- @todo throw an exception on error ¿
 
-            return false;
+            return $this;
         }
 
         //-- Step 2: Apply the patch(es)
@@ -388,12 +374,18 @@ jejoo.php [options]
             $test = shell_exec('git apply '.$file.' 2>&1');
 
             if($test)
-            $this->output($test);
+            {
+                $this->output($test, false, 'red');
+            }
+            else
+            {
+                $this->output(JFile::getName($file).'...', false);
+            }
         }//foreach
 
         $this->output('ok', true, 'green');
 
-        return true;
+        return $this;
     }//function
 
     /**
@@ -404,7 +396,7 @@ jejoo.php [options]
      *
      * @throws Exception
      *
-     * @return boolean
+     * @return JEJoo
      */
     private function processQueries()
     {
@@ -420,6 +412,7 @@ jejoo.php [options]
         $queryResult = array();
         $stripResult = array();
 
+        /** @var $p SimpleXMLElement */
         foreach($this->xml->packages->package as $p)
         {
             $package = (string)$p->attributes()->name;
@@ -428,6 +421,7 @@ jejoo.php [options]
 
             if( ! isset($stripResult[$package])) $stripResult[$package] = array();
 
+            /** @var $query SimpleXMLElement */
             foreach($p->query as $query)
             {
                 $command = (string)$query->attributes()->type;
@@ -550,23 +544,22 @@ jejoo.php [options]
 
         $this->output('ok', true, 'green');
 
-        return true;
+        return $this;
     }//function
 
     /**
      * Method to split up queries from a schema file into an array.
      *
-     * @access	protected
-     * @param	string	SQL schema.
-     * @return	array	Queries to perform.
-     * @since	1.0
+     * @param string $sql SQL schema.
+     *
+     * @return array Queries to perform.
      */
     private function splitQueries($sql)
     {
         // Initialise variables.
-        $buffer		= array();
-        $queries	= array();
-        $in_string	= false;
+        $buffer        = array();
+        $queries    = array();
+        $in_string    = false;
 
         // Trim any whitespace.
         $sql = trim($sql);
@@ -608,6 +601,16 @@ jejoo.php [options]
         return $queries;
     }//function
 
+    /**
+     * Output a text string. Called with no parameters prints an empty line.
+     *
+     * @param string $text The text to display
+     * @param bool $nl Should a new line be printed.
+     * @param string $fg Foreground color.
+     * @param string $bg Background color.
+     *
+     * @return void
+     */
     private function output($text = '', $nl = true, $fg = '', $bg = '')
     {
         static $verbose = null;
@@ -628,7 +631,7 @@ jejoo.php [options]
 try
 {
     // Execute the application.
-    JCli::getInstance('JEJoo')->execute();
+    JApplicationCli::getInstance('JEJoo')->execute();
 
     exit(0);
 }

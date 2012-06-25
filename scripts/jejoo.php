@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
  * JEJoo - Just enough Joomla!
@@ -80,8 +80,10 @@ jejoo.php [options]
      *
      * @return bool
      */
-    public function execute()
+    public function doExecute()
     {
+        JLoader::registerPrefix('Ooo', JPATH_BASE.'/classes');
+        
         $this->output('-------------------------------');
         $this->output('-- JeJoo - JustEnoughJoomla! --');
         $this->output('--  Joomla! Distro Builder   --');
@@ -189,13 +191,14 @@ jejoo.php [options]
 
         $changed = false;
 
-        if( ! file_exists(PATH_BUILD.'/checkout'))
+        if(false == file_exists(PATH_BUILD.'/checkout'))
         {
             //-- Clone repository
             $this->output('creating...', false, 'yellow');
 
             chdir(PATH_BUILD);
-            exec('git clone git@github.com:joomla/joomla-cms.git checkout');
+            passthru('git clone git://github.com/joomla/joomla-cms.git checkout 2>&1', $ret);
+            
             chdir(PATH_BUILD.'/checkout');
 
             $changed = true;

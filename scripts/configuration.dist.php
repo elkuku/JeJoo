@@ -7,8 +7,10 @@ class JConfig
 	/* A web acessible target path - not used yet */
 	public $targetPath = '';
 
+	/* The path the git executable - Leave it empty to disable */
+	public $gitExec = '';
 
-/* Not used yet */
+	/* Not used yet */
 
 	public $dbtype		= 'mysql';
 	public $host		= '127.0.0.1';

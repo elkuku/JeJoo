@@ -9,10 +9,10 @@
  *
  * --help - Try this first =;)
  *
- * --cfgfile <filename> - Path to an elements.xml file (default is elements.xml)
- * --forcebuild - Force a build even if the repo has not changed.
- * --noremoveindexhtml - Do not remove superfluous index.html files.
- * --nocolors Don\'t be fancy ;)
+ * --cfgfile <filename>  Path to an elements.xml file (default is elements.xml)
+ * --forcebuild          Force a build even if the repo has not changed.
+ * --noremoveindexhtml   Do not remove superfluous index.html files.
+ * --nocolors            Don\'t be fancy ;)
  *
  * -q - Be quiet.
  *
@@ -25,6 +25,7 @@
  */
 
 'cli' == PHP_SAPI || die('This script must be run from the command line');
+
 version_compare(PHP_VERSION, '5.3.0') >= 0 || die('This script requires PHP 5.3');
 
 //-- Watch out =;)
@@ -40,7 +41,6 @@ define('JPATH_BASE', __DIR__);
 
 define('JPATH_SITE', JPATH_BASE);//still married
 
-jimport('joomla.application.cli');
 jimport('joomla.filesystem.folder');
 jimport('joomla.filesystem.file');
 
@@ -78,7 +78,7 @@ jejoo.php [options]
      *
      * @throws Exception
      *
-     * @return bool
+     * @return void
      */
     public function execute()
     {

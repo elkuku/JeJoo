@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
  * JEJoo - Just enough Joomla!
@@ -37,6 +37,7 @@ define('JPATH_BASE', __DIR__);
 define('JPATH_SITE', JPATH_BASE); //still married
 
 jimport('joomla.filesystem.folder');
+jimport('joomla.filesystem.file');
 
 /**
  * JEJoo - Just enough Joomla!
@@ -56,7 +57,7 @@ class JEJooBuilder extends JApplicationCli
 	 *
 	 * @return void
 	 */
-	public function execute()
+	public function doExecute()
 	{
 		$this->verbose = ($this->input->get('v') || $this->input->get('verbose')) ? true : false;
 
@@ -67,7 +68,7 @@ class JEJooBuilder extends JApplicationCli
 
 		define('COLORS', 0);
 
-		if (!PATH_BUILD || !is_dir(PATH_BUILD))
+		if (!PATH_BUILD || false == is_dir(PATH_BUILD))
 			throw new Exception('Please specify a valid build path in your configuration.php');
 
 		if ($this->input->get('list'))
@@ -77,7 +78,7 @@ class JEJooBuilder extends JApplicationCli
 			return;
 		}
 
-		if (!PATH_TARGET || !is_dir(PATH_TARGET))
+		if (!PATH_TARGET || false == is_dir(PATH_TARGET))
 			throw new Exception('Please specify a valid target path in your configuration.php');
 
 		$this->output('Target path : ' . PATH_TARGET);

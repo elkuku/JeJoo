@@ -226,6 +226,23 @@
       <query type="insert" item="com_search">menu</query>
     </package>
 
+    <package name="smart_search">
+        <item>administrator/components/com_finder</item>
+        <item>modules/mod_finder</item>
+        <item>plugins/content/finder</item>
+        <item>plugins/finder</item>
+      <query type="insert" item="com_finder">menu</query>
+      <query type="insert" item="com_finder">assets</query>
+      <query type="insert" item="com_finder">extensions</query>
+      <query type="insert" item="mod_finder">extensions</query>
+      <query type="insert" item="plg_content_finder">extensions</query>
+      <query type="insert" item="plg_finder_categories">extensions</query>
+      <query type="insert" item="plg_finder_contacts">extensions</query>
+      <query type="insert" item="plg_finder_content">extensions</query>
+      <query type="insert" item="plg_finder_newsfeeds">extensions</query>
+      <query type="insert" item="plg_finder_weblinks">extensions</query>
+    </package>
+    
     <package name="templates_admin_hathor">
       <item>administrator/templates/hathor</item>
       <item>administrator/language/en-GB/en-GB.tpl_hathor.ini</item>

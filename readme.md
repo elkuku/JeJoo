@@ -29,7 +29,7 @@ The script produces colors if you have the PEAR [Console_Colors](http://pear.php
 ### Directory layout:
 
 ```
-<root>
+<ROOT>
   |_ checkout - The actual clone of the CMS repository - will be created by the script
   |_ extract - The extracted packages - will be created by the script
   |_ stripped - The "stripped" (bare bone) CMS - will be created by the script
